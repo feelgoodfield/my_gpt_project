@@ -21,10 +21,10 @@ def train(data, model, tokenizer, steps, report_frequency, lr):
     # style tensor: single style = 0
     style = torch.zeros(xb.shape[0], dtype=torch.long, device=device)
 
-    _, loss = model(xb, style, targets=yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+    _, loss = model(xb, style, targets=yb) # forward pass with loss
+    optimizer.zero_grad(set_to_none=True) # zero gradients
+    loss.backward() # backpropagate to compute gradients
+    optimizer.step() # update parameters with computed gradients
     if step % report_frequency == 0 or step == steps - 1:
       losses = estimate_loss(data, model, style=0)
       print(f"Step {step}, train loss: {losses['train']:.4f} val loss: {losses['val']:.4f}")
@@ -131,4 +131,5 @@ generated_tokens = model.generate(
 
 generated_text = tokenizer.decode(generated_tokens[0].tolist())
 print("\n--- GENERATED TEXT ---\n")
+generated_text = generated_text.replace("â€œ", '"').replace("â€\x9d", '"')
 print(generated_text)
