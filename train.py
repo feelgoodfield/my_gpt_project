@@ -3,6 +3,10 @@ import argparse
 
 import torch
 import numpy as np
+import unicodedata
+import re
+
+
 
 from transformers import AutoTokenizer
 from util import Dataset
@@ -121,7 +125,7 @@ if args.command == "eval" and args.prompt is not None:
 # style tensor: single style (0) for now
 style_tensor = torch.zeros(context.size(0), dtype=torch.long, device=device)
 
-# generate tokens
+# --- generate tokens ---
 generated_tokens = model.generate(
     start_idx=context,
     style=style_tensor,
@@ -129,7 +133,29 @@ generated_tokens = model.generate(
     use_cache=True
 )
 
-generated_text = tokenizer.decode(generated_tokens[0].tolist())
-print("\n--- GENERATED TEXT ---\n")
-generated_text = generated_text.replace("â€œ", '"').replace("â€\x9d", '"')
+# --- decode tokens safely ---
+generated_text = tokenizer.decode(
+    generated_tokens[0].tolist(),
+    clean_up_tokenization_spaces=True
+)
+
+# --- normalize Unicode ---
+generated_text = unicodedata.normalize("NFC", generated_text)
+
+# --- NEW: robust ASCII cleaning ---
+import re
+
+# replace all smart quotes / dashes
+generated_text = re.sub(r'[“”]', '"', generated_text)
+generated_text = re.sub(r"[‘’]", "'", generated_text)
+generated_text = re.sub(r"[–—]", "-", generated_text)
+
+# remove any remaining non-ASCII / weird control characters
+generated_text = generated_text.encode('ascii', errors='ignore').decode('ascii')
+
+# trim whitespace
+generated_text = generated_text.strip()
+
+# --- final output ---
+print("\n--- CLEAN GENERATED TEXT ---\n")
 print(generated_text)

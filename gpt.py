@@ -128,8 +128,8 @@ class GPTLanguageModel(nn.Module):
         # probs = F.softmax(logits, dim=1) # (batch_size, vocab_size)
         # idx_next = torch.multinomial(probs, num_samples=1) # (batch_size, 1)
         # replace above with temperature and k sampling for more interesting generation
-        temperature = 0.8
-        top_k = 50
+        temperature = 0.8 #lower is less random, higher is more random
+        top_k = 50 # lower is less random, higher is more random, set to None to disable
 
         logits = logits / temperature
 
@@ -137,7 +137,7 @@ class GPTLanguageModel(nn.Module):
            v, _ = torch.topk(logits,top_k)
            logits[logits < v[:, [-1]]] = -float('Inf')
         probs = F.softmax(logits, dim=1)
-        idx_next = torch.multinomial(probs, num_samples=1) # (batch_size, 1)
+        idx_next = torch.multinomial(probs, num_samples=1) # (batch
         idx = torch.cat((idx, idx_next), dim=1) # (batch_size, t + 1)
       return idx
     else:
